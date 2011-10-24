@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+	<style type="text/css">
+		#container { position: relative; }
+		.size {
+			border: 2px dashed silver;
+			position: absolute;
+		}
+		.size.nearest {
+			border: 2px solid black;
+			background-color: silver;
+			z-index: 500 !important;
+			opacity: 0.5;
+		}
+		.dragging .size { z-index: 2000 }
+		#draggable {
+			position: absolute;
+			border: 2px solid gray;
+			z-index: 1000;
+		}
+		#handle {
+			position: absolute;
+			background-color: pink;
+			z-index: 3000;
+			width: 14px;
+			height: 14px;
+			bottom: -7px;
+			right: -7px;
+		}
+	</style>
+</head>
+<body>
+<script type="text/javascript">
+$(function() {
+	var sizes = [[120, 90], [187, 140], [240, 180]],
+		$container = $('#container'),
+		$draggable = $('#draggable');
+		$handle = $('#handle')
+		containerPos = $container.position();
+
+	var $sizes = $([]);
+	sizes.forEach(function(size) {
+		$sizes = $sizes.add($('<div>')
+			.addClass('size')
+			.css({
+				width: size[0],
+				height: size[1]
+			})
+			.appendTo($container));
+	});
+
+	function findNearest(e) {
+		var relPos = getRelativePosition(e),
+			minDst, $nearest;
+		sizes.forEach(function(size, i) {
+			var dst = Math.sqrt(Math.pow(relPos[0] - size[0], 2) + Math.pow(relPos[1] - size[1], 2))
+			if (!minDst || (minDst && dst < minDst)) {
+				$nearest = $sizes.eq(i);
+				minDst = dst;
+			}
+		});
+		return $nearest;
+	}
+
+	$draggable.css({
+		width: sizes[0][0],
+		height: sizes[0][1]
+	});
+
+	var dragging = false;
+
+	function getRelativePosition(e) {
+		return [
+			e.pageX - containerPos.left,
+			e.pageY - containerPos.top
+		]
+	}
+
+	$('#handle')
+		.mousedown(function() {
+			dragging = true;
+			$('body').addClass('dragging');
+		})
+	$(window)
+		.mouseup(function(e) {
+			dragging = false;
+			$('body').removeClass('dragging');
+			$nearest = findNearest(e);
+			$draggable.animate({
+				width: $nearest.width(),
+				height: $nearest.height()
+			}, 200, 'swing', function() {
+				$sizes.removeClass('nearest');
+			});
+		})
+		.mousemove(function(e) {
+			if (!dragging) return;
+			var pos = getRelativePosition(e);
+			$('#draggable').css({
+				width: pos[0],
+				height: pos[1]
+			});
+			$nearest = findNearest(e);
+			$sizes.removeClass('nearest');
+			$nearest.addClass('nearest');
+		});
+});
+</script>
+<div id="container">
+	<div id="draggable"><div id="handle"></div></div>	
+</div>
+</body>
+
+</html>
